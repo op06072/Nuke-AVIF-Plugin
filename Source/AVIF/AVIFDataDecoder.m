@@ -14,6 +14,8 @@
 #import "avif/avif.h"
 #endif
 #import "SDSources/Conversion.h"
+#import "SDSources/SDImageCoderHelper.h"
+#import "SDSources/UIImage+Metadata.h"
 #import <Accelerate/Accelerate.h>
 
 
@@ -206,37 +208,36 @@
         avifDecoderDestroy(decoder);
         return image;
     } else {
-        NSLog(@"Animated images are not supported yet");
-        return nil;
+        // NSLog(@"Animated images are not supported yet");
+        // return nil;
+        // Animated image
+        NSMutableArray<Image *> *frames = [NSMutableArray array];
+        while (avifDecoderNextImage(decoder) == AVIF_RESULT_OK) {
+            @autoreleasepool {
+                CGImageRef imageRef = SDCreateCGImageFromAVIF(decoder->image);
+                if (!imageRef) {
+                    continue;
+                }
+                Image *image = nil;
+    #if AVIF_PLUGIN_MAC
+                image = [[NSImage alloc] initWithCGImage:imageRef size:CGSizeZero];
+    #else
+                image = [UIImage imageWithCGImage:imageRef scale:scale orientation:UIImageOrientationUp];
+    #endif
+                NSTimeInterval duration = decoder->imageTiming.duration; // Should use `decoder->imageTiming`, not the `decoder->duration`, see libavif source code
+                SDImageFrame *frame = [SDImageFrame frameWithImage:image duration:duration];
+                [frames addObject:frame];
+            }
+        }
+    
+        avifDecoderDestroy(decoder);
+    
+        UIImage *animatedImage = [SDImageCoderHelper animatedImageWithFrames:frames];
+        animatedImage.sd_imageLoopCount = 0;
+        animatedImage.sd_imageFormat = SDImageFormatAVIF;
+    
+        return animatedImage;
     }
-
-    // Animated image
-//    NSMutableArray<Image *> *frames = [NSMutableArray array];
-//    while (avifDecoderNextImage(decoder) == AVIF_RESULT_OK) {
-//        @autoreleasepool {
-//            CGImageRef imageRef = SDCreateCGImageFromAVIF(decoder->image);
-//            if (!imageRef) {
-//                continue;
-//            }
-//            Image *image = nil;
-//#if AVIF_PLUGIN_MAC
-//            image = [[NSImage alloc] initWithCGImage:imageRef size:CGSizeZero];
-//#else
-//            image = [UIImage imageWithCGImage:imageRef scale:scale orientation:UIImageOrientationUp];
-//#endif
-//            NSTimeInterval duration = decoder->imageTiming.duration; // Should use `decoder->imageTiming`, not the `decoder->duration`, see libavif source code
-//            SDImageFrame *frame = [SDImageFrame frameWithImage:image duration:duration];
-//            [frames addObject:frame];
-//        }
-//    }
-//
-//    avifDecoderDestroy(decoder);
-//
-//    UIImage *animatedImage = [SDImageCoderHelper animatedImageWithFrames:frames];
-//    animatedImage.sd_imageLoopCount = 0;
-//    animatedImage.sd_imageFormat = SDImageFormatAVIF;
-//
-//    return animatedImage;
 }
 
 @end
