@@ -11,9 +11,9 @@ import Foundation
 
 private let fileHeaderIndex: Int = 4
 
-private let avifBytes: [UInt8] =         [
+private let avifBytes: [UInt8] = [
     0x66, 0x74, 0x79, 0x70, // ftyp
-    0x61, 0x76, 0x69, 0x66  // avif
+    0x61, 0x76, 0x69  // avif or avis
 ]
 private let magicBytesEndIndex: Int = fileHeaderIndex+avifBytes.count
 // MARK: - AVIF Format Testing
