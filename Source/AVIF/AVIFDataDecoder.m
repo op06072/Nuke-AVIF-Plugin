@@ -211,6 +211,12 @@
         // NSLog(@"Animated images are not supported yet");
         // return nil;
         // Animated image
+        avifResult nextImageResult = avifDecoderNextImage(decoder);
+        if (nextImageResult != AVIF_RESULT_OK) {
+            NSLog(@"Failed to decode image: %s", avifResultToString(nextImageResult));
+            avifDecoderDestroy(decoder);
+            return nil;
+        }
         NSMutableArray<Image *> *frames = [NSMutableArray array];
         while (avifDecoderNextImage(decoder) == AVIF_RESULT_OK) {
             @autoreleasepool {
